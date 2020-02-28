@@ -23,5 +23,9 @@ Vagrant.configure("2") do |config|
       # This defines what Virtualbox knows this machine as
       vb.name = "sc01"
     end
+
+    sc01.vm.provision "ansible_local" do |a|
+      a.playbook = "ansible.yml"
+    end
   end
 end
