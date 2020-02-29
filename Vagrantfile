@@ -14,6 +14,13 @@ Vagrant.configure("2") do |config|
     config.cache.scope = :box
   end
 
+
+  # This starts the ansible privisioner inside the virtual machine
+  config.vm.provision "ansible_local" do |a|
+    # This defines the Ansible playbook to run
+    a.playbook = "ansible.yml"
+  end
+
   # This defines the name that Vagrant knows this machine as
   config.vm.define "sc01" do |sc01|
     # This defines what the virtual machine knows itself as
@@ -24,8 +31,22 @@ Vagrant.configure("2") do |config|
       vb.name = "sc01"
     end
 
-    sc01.vm.provision "ansible_local" do |a|
-      a.playbook = "ansible.yml"
+    # This starts a shell provisioner inside the virtual machine
+    sc01.vm.provision "shell" do |shell|
+      # This defines the commands we will run
+      shell.inline = <<-EOF
+        if [ -z "$(which inspec)" ]
+        then
+          curl https://omnitruck.chef.io/install.sh | bash -s -- -P inspec # Consider using wget and confirming the script does what you want!
+          inspec --chef-license=accept-silent nothing >/dev/null 2>/dev/null # This is for personal use only. ACCEPT EULA FOR YOURSELF FIRST
+        fi
+      EOF
+    end
+
+    # This starts a shell provisioner on every boot inside the virtual machine
+    sc01.vm.provision "shell", run: "always" do |shell|
+      # This is the command to run
+      shell.inline = "inspec exec /vagrant/inspec.rb"
     end
   end
 end
